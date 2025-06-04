@@ -7,7 +7,7 @@
 rootがretract状態にならないようにする
 ## 実装のメモ
 まずは、初期状態の木を作成する。<br>
-当初は、適当なサイズの木を人手で作り(ex. ノード)、
+当初は、適当なサイズの木を人手で作り(ex. ノード数10,...)、それを成長させるというのを想定していたが、定常状態まで時間を経過させてから、それを初期状態とするほうがいい。
 
 ## 参考文献一覧
 [1] NJ Cira, ML Paull, S Sinha, F Zanini, EY Ma, IH Riedel-Kruse. "Structure, motion, and multiscale search of traveling networks"<br>
