@@ -1,9 +1,8 @@
 # TravelingNetworkSim
-## Abstract
 - Traveling Network のシミュレーションプログラムです。<br>
 - sim1.py: fig.2-b,c,d,(e)に相当。k_b, k_gによるそれぞれの葉の数の感度分析と○○
 
-## fixme!
+## !fixme
 ソサイエティの論文の範囲では、座標の概念は不要に見えるが、要相談<br>
 コマンドラインから実行できるようにする。
 ## 実装のメモ
