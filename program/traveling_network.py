@@ -123,7 +123,7 @@ class TravelingNetwork:
                 self.nodes[parent].state = "free"
 
     # ───────────────── stats ─────────────────
-    def snapshot(self) -> dict[str, float]:
+    def snapshot(self):
         ne = len(self.edges)
         nf = sum(1 for n in self.nodes.values() if n.is_leaf and n.state == "free")
         nr = sum(1 for n in self.nodes.values() if n.is_leaf and n.state == "retract")

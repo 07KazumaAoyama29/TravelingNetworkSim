@@ -33,8 +33,8 @@ def run_once(S: float, k_b: float, k_g: float, k_r: float, alpha: float, dL: flo
     # 定常状態になるまで、放置
     n1 = solve_N1_scaled(S, k_b, k_g)#N_1 theoryの近似値を計算
     t_r = (n1 / (2 * k_b))#論文のτ_rに相当
-    burn_step = int(10 * t_r)#定常状態になるまでに必要なステップ数
-    sample_steps = int(400 * t_r) #大規模 S や小さな k_b で τ_r が伸びた場合は sampling_steps を「少なくとも 20 τ_r 以上」に再設定するのが目安
+    burn_step = max(int(10 * t_r),  2000)#定常状態になるまでに必要なステップ数
+    sample_steps = max(int(40 * t_r), 10000) #大規模 S や小さな k_b で τ_r が伸びた場合は sampling_steps を「少なくとも 20 τ_r 以上」に再設定するのが目安
     print(f"S:{S}, k_b:{k_b}, k_g:{k_g}, burn_step:{burn_step}, sample_steps:{sample_steps}")
     for i in range(int(burn_step)):
         net.step()
@@ -56,7 +56,7 @@ def main():
     ap = argparse.ArgumentParser(
         description="Run a single TravelingNetwork simulation."
     )
-    ap.add_argument("--S", type=float, default=200.0)
+    ap.add_argument("--S", type=float, default=100.0)
     ap.add_argument("--kb", type=float, default=0.05)
     ap.add_argument("--kg", type=float, default=0.25)
     ap.add_argument("--kr", type=float, default=1.0)
@@ -64,6 +64,7 @@ def main():
                     help="branch angle (radian)")
     ap.add_argument("--dL", type=float, default=1.0, help="unit edge length")
     ap.add_argument("--seed", type=int, default=random.randint(0,10000))
+    #ap.add_argument("--seed", type=int, default=2131)
     args = ap.parse_args()
     print(f"seed: {args.seed}")
     result = run_once(S=args.S, k_b=args.kb, k_g=args.kg, k_r=args.kr,alpha=args.alpha, dL=args.dL, seed=args.seed)
