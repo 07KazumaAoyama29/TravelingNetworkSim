@@ -29,14 +29,9 @@ def solve_N1_scaled(S: float, KB: float, KG: float, dL: float = 1.0):
 # ───────────────────────────────────────────
 # 1 回シミュレーションして平均値を返す関数
 # ───────────────────────────────────────────
-def run_once(S: float, k_b: float, k_g: float, k_r: float, alpha: float, dL: float, seed: int):
+def run_once(S: float, k_b: float, k_g: float, k_r: float, alpha: float, dL: float, seed, burn_step, sample_steps):
     net = TravelingNetwork(S=S, k_b=k_b, k_g=k_g, k_r=k_r, alpha=alpha, dL=dL, seed=seed)
     # 定常状態になるまで、放置
-    n1 = solve_N1_scaled(S, k_b, k_g)#N_1 theoryの近似値を計算
-    t_r = (n1 / (2 * k_b))#論文のτ_rに相当
-    burn_step = max(int(10 * t_r),  2000)#定常状態になるまでに必要なステップ数
-    sample_steps = max(int(40 * t_r), 10000) #大規模 S や小さな k_b で τ_r が伸びた場合は sampling_steps を「少なくとも 20 τ_r 以上」に再設定するのが目安
-    print(f"S:{S}, k_b:{k_b}, k_g:{k_g}, burn_step:{burn_step}, sample_steps:{sample_steps}")
     for i in range(int(burn_step)):
         net.step()
 
@@ -57,7 +52,7 @@ def main():
     ap = argparse.ArgumentParser(
         description="Run a single TravelingNetwork simulation."
     )
-    ap.add_argument("--S", type=float, default=200.0)
+    ap.add_argument("--S", type=float, default=800.0)
     ap.add_argument("--kb", type=float, default=0.1)
     ap.add_argument("--kg", type=float, default=0.01)
     ap.add_argument("--kr", type=float, default=1.0)
@@ -67,15 +62,22 @@ def main():
     args = ap.parse_args()
     nf = []
     nr = []
-    for i in range(20):
+    l_bar = []
+    n1 = solve_N1_scaled(args.S, args.kb, args.kg)#N_1 theoryの近似値を計算
+    t_r = (n1 / (2 * args.kb))#論文のτ_rに相当
+    burn_step = max(int(10 * t_r),  2000)#定常状態になるまでに必要なステップ数
+    sample_steps = max(int(40 * t_r), 50000) #大規模 S や小さな k_b で τ_r が伸びた場合は sampling_steps を「少なくとも 20 τ_r 以上」に再設定するのが目安
+    print(f"S:{args.S}, k_b:{args.kb}, k_g:{args.kg}, burn_step:{burn_step}, sample_steps:{sample_steps}")
+    for i in range(50):
         seed = random.randint(0,10000)
         print(f"seed: {seed}")
-        result = run_once(S=args.S, k_b=args.kb, k_g=args.kg, k_r=args.kr,alpha=args.alpha, dL=args.dL, seed=seed)
+        result = run_once(S=args.S, k_b=args.kb, k_g=args.kg, k_r=args.kr,alpha=args.alpha, dL=args.dL, seed=seed, burn_step=burn_step, sample_steps=sample_steps)
         if result["NR"] == 1 and result["NF"] == 0.0: 
             print("collapse")
         else:
             nf.append(result["NF"])
             nr.append(result["NR"])
+            l_bar.append(result["L_bar"])
     print(nf)
     print(nr)
     print("----- Simulation result -----")
@@ -84,6 +86,9 @@ def main():
     print(f"NF: 平均値: {nfmean:.3f} 95%信頼区間: {(nfmean - nfCI_lower):.3f}")
     nrmean, nrCI_lower, nrCI_upper = compute_95_ci(nr)
     print(f"NR: 平均値: {nrmean:.3f} 95%信頼区間: {(nrmean - nrCI_lower):.3f}")
+    l_barmean, l_barCI_lower, l_barCI_upper = compute_95_ci(l_bar)
+    print(f"l_bar: 平均値: {l_barmean:.3f} 95%信頼区間: {(l_barmean - l_barCI_lower):.3f}")
+    print(f"N1: {nfmean + nrmean}, S/L_bar: {args.S/l_barmean}")
 
 if __name__ == "__main__":
     main()
