@@ -57,9 +57,9 @@ def main():
     ap = argparse.ArgumentParser(
         description="Run a single TravelingNetwork simulation."
     )
-    ap.add_argument("--S", type=float, default=100.0)
-    ap.add_argument("--kb", type=float, default=0.55)
-    ap.add_argument("--kg", type=float, default=0.1)
+    ap.add_argument("--S", type=float, default=200.0)
+    ap.add_argument("--kb", type=float, default=0.1)
+    ap.add_argument("--kg", type=float, default=0.01)
     ap.add_argument("--kr", type=float, default=1.0)
     ap.add_argument("--alpha", type=float, default=1.0472,  # = π/3
                     help="branch angle (radian)")
