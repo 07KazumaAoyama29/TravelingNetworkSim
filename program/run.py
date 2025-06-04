@@ -28,12 +28,14 @@ def solve_N1_scaled(S: float, KB: float, KG: float, dL: float = 1.0):
 # ───────────────────────────────────────────
 # 1 回シミュレーションして平均値を返す関数
 # ───────────────────────────────────────────
-def run_once(S: float, k_b: float, k_g: float, k_r: float, alpha: float, dL: float, seed: int, sample_steps: int):
+def run_once(S: float, k_b: float, k_g: float, k_r: float, alpha: float, dL: float, seed: int):
     net = TravelingNetwork(S=S, k_b=k_b, k_g=k_g, k_r=k_r, alpha=alpha, dL=dL, seed=seed)
     # 定常状態になるまで、放置
     n1 = solve_N1_scaled(S, k_b, k_g)#N_1 theoryの近似値を計算
-    burn_step = 10 * (n1 / (2 * k_b))#定常状態になるまでに必要なステップ数
-    print(f"S:{S}, k_b:{k_b}, k_g:{k_g}, burn_step:{burn_step}")
+    t_r = (n1 / (2 * k_b))#論文のτ_rに相当
+    burn_step = int(10 * t_r)#定常状態になるまでに必要なステップ数
+    sample_steps = int(400 * t_r) #大規模 S や小さな k_b で τ_r が伸びた場合は sampling_steps を「少なくとも 20 τ_r 以上」に再設定するのが目安
+    print(f"S:{S}, k_b:{k_b}, k_g:{k_g}, burn_step:{burn_step}, sample_steps:{sample_steps}")
     for i in range(int(burn_step)):
         net.step()
 
@@ -62,10 +64,9 @@ def main():
                     help="branch angle (radian)")
     ap.add_argument("--dL", type=float, default=1.0, help="unit edge length")
     ap.add_argument("--seed", type=int, default=random.randint(0,10000))
-    ap.add_argument("--sample", type=int, default=20_000, help="sampling steps")
     args = ap.parse_args()
     print(f"seed: {args.seed}")
-    result = run_once(S=args.S, k_b=args.kb, k_g=args.kg, k_r=args.kr,alpha=args.alpha, dL=args.dL, seed=args.seed, sample_steps=args.sample)
+    result = run_once(S=args.S, k_b=args.kb, k_g=args.kg, k_r=args.kr,alpha=args.alpha, dL=args.dL, seed=args.seed)
 
     print("----- Simulation result -----")
     for k, v in result.items():
