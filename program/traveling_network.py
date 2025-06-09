@@ -19,6 +19,8 @@ class Node:
     is_leaf: bool = True
     state: str = "free"  # "free" または "retract"
     edge_from_parent: int | None = None  # Edge ID
+    x: float = 0.0
+    y: float = 0.0
 
 class TravelingNetwork:
     """Traveling Network 木構造シミュレーションクラス
@@ -53,14 +55,22 @@ class TravelingNetwork:
 
 
     # ───────────────── private helpers ─────────────────
-    def _new_node(self, parent: int | None = None, length: float = 0.0,
-                  angle: float = 0.0) -> int:
-        nid = self.next_node_id; self.next_node_id += 1
-        self.nodes[nid] = Node(id=nid, parent=parent)
+    def _new_node(self, parent: int | None = None, length: float = 0.0, angle: float = 0.0):
+        nid = self.next_node_id
+        self.next_node_id += 1
+
+        if parent is None: x, y = 0.0, 0.0
+        else:
+            parent_node = self.nodes[parent]
+            x = parent_node.x + length * math.cos(angle)
+            y = parent_node.y + length * math.sin(angle)
+
+        self.nodes[nid] = Node(id=nid, parent=parent, x=x, y=y)
+
         if parent is not None:
-            eid = self.next_edge_id; self.next_edge_id += 1
-            self.edges[eid] = Edge(parent=parent, child=nid,
-                                   length=length, angle=angle)
+            eid = self.next_edge_id
+            self.next_edge_id += 1
+            self.edges[eid] = Edge(parent=parent, child=nid, length=length, angle=angle)
             self.add_node.append([nid, parent])
             self.nodes[parent].children.append(nid)
             self.nodes[nid].edge_from_parent = eid
@@ -118,9 +128,11 @@ class TravelingNetwork:
 
     def _grow(self, node: Node):
         eid = node.edge_from_parent
-        if eid is None:
-            return
+        if eid is None: return
         self.edges[eid].length += self.dL
+        parent = self.nodes[self.edges[eid].parent]
+        node.x = parent.x + self.edges[eid].length * math.cos(self.edges[eid].angle)
+        node.y = parent.y + self.edges[eid].length * math.sin(self.edges[eid].angle)
         self.total_length = sum(e.length for e in self.edges.values())
 
 

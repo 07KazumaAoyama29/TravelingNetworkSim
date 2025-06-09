@@ -34,8 +34,9 @@ def run_once(S: float, k_b: float, k_g: float, k_r: float, alpha: float, dL: flo
     # 定常状態になるまで、放置
     for i in range(int(burn_step)):
         net.step()
-        print(net.snapshot()["add"])
-        print(net.snapshot()["de"])
+        a = net.nodes.values()
+        for i in a:
+            print(i.is_leaf)
         input()
 
     # ② 計測区間
