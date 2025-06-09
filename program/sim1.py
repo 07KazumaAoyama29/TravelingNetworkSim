@@ -34,6 +34,9 @@ def run_once(S: float, k_b: float, k_g: float, k_r: float, alpha: float, dL: flo
     # 定常状態になるまで、放置
     for i in range(int(burn_step)):
         net.step()
+        print(net.snapshot()["add"])
+        print(net.snapshot()["de"])
+        input()
 
     # ② 計測区間
     accum = []
@@ -52,9 +55,9 @@ def main():
     ap = argparse.ArgumentParser(
         description="Run a single TravelingNetwork simulation."
     )
-    ap.add_argument("--S", type=float, default=800.0)
+    ap.add_argument("--S", type=float, default=1000.0)
     ap.add_argument("--kb", type=float, default=0.1)
-    ap.add_argument("--kg", type=float, default=0.01)
+    ap.add_argument("--kg", type=float, default=0.05)
     ap.add_argument("--kr", type=float, default=1.0)
     ap.add_argument("--alpha", type=float, default=1.0472,  # = π/3
                     help="branch angle (radian)")

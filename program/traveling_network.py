@@ -34,6 +34,8 @@ class TravelingNetwork:
         self.k_s = k_b  # サイズ保存条件
         self.alpha = alpha
         self.dL = dL
+        self.del_node = []
+        self.add_node = []
         random.seed(seed)
 
         # ノード・エッジのストレージ
@@ -59,12 +61,15 @@ class TravelingNetwork:
             eid = self.next_edge_id; self.next_edge_id += 1
             self.edges[eid] = Edge(parent=parent, child=nid,
                                    length=length, angle=angle)
+            self.add_node.append([nid, parent])
             self.nodes[parent].children.append(nid)
             self.nodes[nid].edge_from_parent = eid
         return nid
 
     # ───────────────── public API ─────────────────
     def step(self):
+        self.add_node.clear()
+        self.del_node.clear()
         self.nodes = {i:n for i,n in self.nodes.items() if isinstance(n,Node)}
         # ── ① 今の総エッジ長を計算 ─────────────────────
         self.total_length = sum(e.length for e in self.edges.values())
@@ -77,7 +82,7 @@ class TravelingNetwork:
             k_s_eff = self.k_s * 0.8        # 短すぎ → 伸ばしを許す
         else:
             k_s_eff = self.k_s              # ほぼ目標 → そのまま
-        k_b_eff = self.k_b                  # 分岐率は固定で OK"""
+        k_b_eff = self.k_b                  # 分岐率は固定で OK
         free_leaves = [
     n for n in self.nodes.values()
     if isinstance(n, Node)                  # Ellipsis ガード
@@ -102,31 +107,6 @@ class TravelingNetwork:
             cum += span
         idx = int((r-cum)/self.k_r)
         self._do_retract_event(retract_leaves[idx])
-    """def step(self):
-        #Gillespie 1 ステップ実行
-        free_leaves = [n for n in self.nodes.values() if n.is_leaf and n.state == "free"]
-        retract_leaves = [n for n in self.nodes.values() if n.is_leaf and n.state == "retract"]
-        # 総レート
-        lam = (self.k_b + self.k_g + self.k_s) * len(free_leaves) + self.k_r * len(retract_leaves)
-        if lam == 0:
-            return  # 動きがない
-        # 時間更新
-        dt = random.expovariate(lam)
-        self.time += dt
-        # ルーレット選択
-        r = random.random() * lam
-        cumulative = 0.0
-        # 自由葉イベント
-        for ev, rate in (("branch", self.k_b), ("grow", self.k_g), ("switch", self.k_s)):
-            span = rate * len(free_leaves)
-            if r < cumulative + span:
-                self._do_free_event(random.choice(free_leaves), ev)
-                return
-            cumulative += span
-        # 収縮葉
-        idx = int((r - cumulative) / self.k_r)
-        self._do_retract_event(retract_leaves[idx])"""
-
     # ───────────────── event handlers ─────────────────
     def _do_free_event(self, node: Node, ev_type: str):
         if ev_type == "grow":
@@ -167,13 +147,14 @@ class TravelingNetwork:
 
         # 2. 長さが 0 以下なら葉ノードとエッジを削除
         if self.edges[eid].length <= 0:
+            self.del_node.append([node.id, self.edges[eid].child])
             parent_id = self.edges[eid].parent
 
             # データ構造更新
             self.nodes[parent_id].children.remove(node.id)
             del self.edges[eid]
             del self.nodes[node.id]
-
+            
             # 3. 親が子を失って “孤立” した場合の扱い
             if len(self.nodes[parent_id].children) == 0:
                 # 親を retract‐leaf に変換して
@@ -183,28 +164,10 @@ class TravelingNetwork:
                 # edge_from_parent は既存のまま  → 上位エッジが縮む 
         self.total_length = sum(e.length for e in self.edges.values())
 
-    
-
-    """def _do_retract_event(self, node: Node):
-        eid = node.edge_from_parent
-        if eid is None:
-            return
-        self.edges[eid].length -= self.dL
-        if self.edges[eid].length <= 0:
-            # エッジ・ノード削除
-            parent = self.edges[eid].parent
-            self.nodes[parent].children.remove(node.id)
-            del self.edges[eid]
-            del self.nodes[node.id]
-            # 親ノードの次数更新
-            if len(self.nodes[parent].children) == 0:
-                self.nodes[parent].is_leaf = True
-                self.nodes[parent].state = 'free'"""
-
     # ───────────────── stats ─────────────────
     def snapshot(self):
         ne = len(self.edges)
         nf = sum(1 for n in self.nodes.values() if n.is_leaf and n.state == "free")
         nr = sum(1 for n in self.nodes.values() if n.is_leaf and n.state == "retract")
         l_bar = (sum(e.length for e in self.edges.values()) / ne) if ne else 0.0
-        return dict(time=self.time, L_bar=l_bar, NE=ne, NF=nf, NR=nr)
+        return dict(time=self.time, L_bar=l_bar, NE=ne, NF=nf, NR=nr, add = self.add_node, de =self.del_node)
